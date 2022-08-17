@@ -1,0 +1,115 @@
+---
+title: "Data Visualization"
+author: "Michael Zargari"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Load packages
+
+```{r}
+# General use packages:
+library(tidyverse)
+library(here)
+library(janitor)
+
+# Specifically for plots:
+library(patchwork)
+library(ggrepel)
+library(gghighlight)
+library(paletteer)
+library(ggExtra)
+library(ggbeeswarm)
+
+# And for another dataset we'll explore:
+library(gapminder)
+
+# Spatial
+library(sf)
+```
+
+### Read in Lizard data
+
+```{r}
+lizards <- read_csv(here("data_tidy", "lizards.csv"))
+```
+
+```{r}
+ggplot(data = lizards, aes(x = total_length     ## Makes changes global changes
+                           , y = weight)) +
+  geom_point()                                  ## Putting any code in here only affects the line
+```
+
+Create a histogram of total lengths for all lizards in the dataset
+
+```{r}
+## aes should only contain variables, not constants
+
+ggplot(data = lizards, aes(x = total_length)) +
+  geom_histogram(color = "red"          # changes the border color
+                 , fill = "blue"        # changes the fill color
+                 , size = 1             # changes the size of the outline
+                 , linetype = "dotted") # changes the type of outline
+```
+
+```{r}
+ggplot(data = lizards, aes(x = total_length   
+                           , y = weight)) +
+  geom_point(shape = 22             ## Each shape number is a different shape
+             , color = "yellow"
+             , fill = "red"
+             , size = 4
+             , alpha = .2)          ## This controls how see-through the points are  
+```
+
+```{r}
+ggplot(data = lizards, aes(x = total_length   
+                           , y = weight)) +
+  geom_point(aes(color = common_name
+                 , size = total_length)
+             , alpha = 0.5) +
+  theme_minimal()
+```
+
+```{r}
+ggplot(data = lizards, aes(x = total_length, y = weight)) +
+  geom_point() +
+  facet_wrap(~common_name, ncol = 3, scales = "free")
+```
+
+```{r}
+lizard_counts <- lizards %>% 
+  group_by(common_name) %>% 
+  summarize(
+    counts = n()
+  )
+
+## This does the same thing:
+lizard_counts2 <- lizards %>% 
+  count(common_name, site, tail)
+```
+
+```{r}
+ggplot(data = lizard_counts, aes(x = counts
+                                 , y = fct_reorder(common_name, counts))) +
+  geom_col()
+```
+
+Create a scatterplot, faceted by species for total length versus weight. The color and shape of points should differ based on the species (common name). Change the theme. Make each faceted panel have flexible axis limits (scales should be free)
+
+```{r}
+ggplot(data = lizards, aes(x = total_length
+                         , y = weight)) +
+  geom_point(aes(color = common_name)) +
+  theme_light() +
+  facet_wrap(~common_name, scales = "free") +
+  labs(x = "Total Length (mm)"
+       , y = "Weight (grams)"
+       , title = "Jonada Basin lizard sites"
+       , subtitle = "This is a subtitle"
+       , caption = "Data is from The Organization")
+```
