@@ -36,7 +36,22 @@ library(sf)
 
 ```{r}
 lizards <- read_csv(here("data_tidy", "lizards.csv"))
+
+lizard_counts <- lizards %>% 
+  group_by(common_name) %>% 
+  summarize(
+    counts = n()
+  )
+
+## This does the same thing:
+lizard_counts2 <- lizards %>% 
+  count(common_name, site, tail)
+
+lizards_median <- lizards %>% 
+  mutate(common_name = fct_reorder(common_name, total_length, .fun = median))
 ```
+
+### Plot them
 
 ```{r}
 ggplot(data = lizards, aes(x = total_length     ## Makes changes global changes
@@ -82,18 +97,6 @@ ggplot(data = lizards, aes(x = total_length, y = weight)) +
 ```
 
 ```{r}
-lizard_counts <- lizards %>% 
-  group_by(common_name) %>% 
-  summarize(
-    counts = n()
-  )
-
-## This does the same thing:
-lizard_counts2 <- lizards %>% 
-  count(common_name, site, tail)
-```
-
-```{r}
 ggplot(data = lizard_counts, aes(x = counts
                                  , y = fct_reorder(common_name, counts))) +
   geom_col()
@@ -112,4 +115,121 @@ ggplot(data = lizards, aes(x = total_length
        , title = "Jonada Basin lizard sites"
        , subtitle = "This is a subtitle"
        , caption = "Data is from The Organization")
+```
+
+### Fun with scales
+
+```{r}
+ggplot(data = lizards, aes(x = total_length
+                         , y = weight)) +
+  geom_point(aes(color = weight)) +
+  scale_colour_gradient(low = "green", high = "black")
+```
+
+```{r}
+ggplot(data = lizards, aes(x = total_length
+                         , y = weight)) +
+  geom_point(aes(color = weight)) +
+  scale_colour_gradientn(colors = c("magenta", "cyan4", "darkorchid3", "dodgerblue"))
+```
+
+```{r}
+ggplot(data = lizards, aes(x = total_length
+                         , y = weight)) +
+  geom_point(aes(color = weight)) +
+  scale_colour_steps(low = "yellow", high = "black")
+```
+
+```{r}
+ggplot(data = lizards, aes(x = total_length
+                         , y = weight)) +
+  geom_point(aes(color = total_length)) +
+  scale_colour_steps2(low = "yellow"
+                      , mid = "orange"
+                      , high = "black"
+                      , midpoint = 150
+                      , breaks = c(50, 75, 150, 180, 220, 280)) + 
+  theme_minimal()
+```
+
+```{r}
+ggplot(data = lizards, aes(x = total_length
+                         , y = weight)) +
+  geom_point(aes(color = total_length)) +
+  scale_color_stepsn(colors = c("magenta", "cyan4", "darkorchid3", "dodgerblue")
+                     , breaks = seq(from = 0, to = 300, by = 60))
+```
+
+Make a horizontal boxplot with commons name on the y-axis, total length on the x-axis, with boxplot fill changing based on the common name
+
+```{r}
+ggplot(data = lizards, aes(x = total_length
+                         , y = common_name)) +
+  geom_boxplot(aes(fill = common_name))
+```
+
+This orders it by the median of the group
+
+```{r}
+ggplot(data = lizards_median, aes(x = total_length
+                         , y = common_name)) +
+  geom_boxplot(aes(fill = common_name), show.legend = FALSE) +
+  scale_fill_paletteer_d(palette = "rcartocolor::Fall") +
+  theme_minimal()
+```
+
+```{r}
+ggplot(data = lizards, aes(x = total_length
+                         , y = weight)) +
+  geom_point(aes(color = weight)) +
+  theme(panel.grid.major.x = element_line(color = "red")
+        , panel.grid.minor.y = element_line(color = "green")
+        , axis.title.x = element_text(color = "blue", size = 12)
+        , axis.title.y = element_text(color = "orange")
+        , text = element_text(size = 18)
+        , panel.background = element_rect(color = "purple", fill = "pink")) +
+  annotate("text", x = 300, y = 50, label = "This is the point\nwe made", color = "white") +
+  geom_vline(xintercept = 150, linetype = "dashed", color = "orange", size = 3)
+```
+
+## Repulsive labels with `ggrepel`
+
+```{r}
+wws_lizards <- lizards %>% 
+  filter(common_name == "western whiptail"
+         , site == "sand")
+```
+
+```{r}
+ggplot(data = wws_lizards, aes(x = total_length
+                         , y = weight)) +
+  geom_point() +
+  geom_text_repel(aes(label = toe_num))
+```
+
+```{r}
+gapminder %>% 
+  filter(year == 2002 & continent == "Europe") %>% 
+  ggplot(aes(x = gdpPercap
+             , y = lifeExp)) +
+  geom_point() +
+  geom_text_repel(aes(label = country), size = 3)
+```
+
+```{r}
+ggplot(data = lizards, aes(x = total_length
+                         , y = weight)) +
+  geom_point() +
+  gghighlight(toe_num == 250, label_key = toe_num)
+```
+
+### Making a map
+
+```{r}
+jornada_veg <- read_sf(here("data_raw", "spatial_vegetation", "doc.kml"))
+
+ggplot() + 
+  geom_sf(data = jornada_veg, aes(fill = Name)) + 
+  theme_minimal() +
+  scale_fill_paletteer_d(palette = "ggthemes::manyeys")
 ```
