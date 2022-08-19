@@ -1,0 +1,104 @@
+---
+title: "Lizard Data Viz"
+author: "Michael Zargari"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+# General use packages:
+library(tidyverse)
+library(here)
+library(janitor)
+
+# Specifically for plots:
+library(patchwork)
+library(ggrepel)
+library(gghighlight)
+library(paletteer)
+library(ggExtra)
+library(ggbeeswarm)
+
+# And for another dataset we'll explore:
+library(gapminder)
+
+# Spatial
+library(sf)
+```
+
+```{r}
+lizards <- read_csv(here("data_tidy", "lizards.csv"))
+```
+
+```{r}
+ # Get the counts:
+ lizard_counts <- lizards %>%
+   mutate(date = lubridate::mdy(date)) %>%
+   count(year = lubridate::year(date), common_name) %>%
+   drop_na()
+```
+
+```{r}
+ # Make a heatmap of counts:
+ ggplot(data = lizard_counts, aes(x = year, y = common_name)) +
+   geom_tile(aes(fill = n), show.legend = FALSE) +
+   geom_text(aes(label = n), color = "white", size = 3) +
+   scale_fill_gradientn(colors = c("navy","red","orange")) +
+   theme_minimal() +
+   labs(x = "Year", y = "Lizard common name")
+```
+
+```{r}
+whiptails <- lizards %>%
+  filter(common_name == "western whiptail") %>% 
+  drop_na(total_length, weight)
+```
+
+### Beeswarm plot
+
+```{r}
+whiptail_bee <- ggplot(data = whiptails, aes(x = sex, y = weight)) +
+   geom_beeswarm(size = 1) +
+   geom_boxplot(fill = NA) +
+   scale_x_discrete(labels = c("female","juvenile","male")) +
+  theme_minimal()
+```
+
+### Marginal Plot
+
+Starting from whiptails, plot total length (x-axis) versus weight (y-axis), with point color dependent on sex
+
+```{r}
+whiptail_plot <- ggplot(data = whiptails, aes(x = total_length
+                             , y = weight)) +
+  geom_point(aes(color = sex)) +
+  theme(legend.position = "bottom")
+
+ggMarginal(whiptail_plot, type = "boxplot", groupColour = TRUE)
+```
+
+### Patchwork (bringing tables together)
+
+```{r}
+(whiptail_bee + whiptail_plot)
+```
+
+```{r}
+(whiptail_bee + whiptail_plot) / whiptail_plot
+```
+
+```{r}
+(whiptail_bee + whiptail_plot) / whiptail_plot & theme_dark()
+```
+
+```{r}
+whiptail_bee + whiptail_plot - whiptail_plot
+```
+
+```{r}
+whiptail_bee + whiptail_plot + whiptail_plot
+```
